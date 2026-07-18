@@ -1,0 +1,80 @@
+name: Deploy Production
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main, master]
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: >
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event != 'pull_request')
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Install & build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "${{ secrets.VPS_HOST }}" >> ~/.ssh/known_hosts 2>/dev/null || true
+
+      - name: Upload artifacts
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          APP_DIR: ${{ secrets.VPS_APP_DIR }}
+        run: |
+          APP_DIR="${APP_DIR:-/opt/crm}"
+          RSYNC_RSH="ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=accept-new"
+          rsync -az --delete dist/ "${VPS_USER}@${VPS_HOST}:${APP_DIR}/dist/"
+          rsync -az api/ "${VPS_USER}@${VPS_HOST}:${APP_DIR}/api/"
+          rsync -az scripts/ ecosystem.config.cjs server.prod.ts load-env.ts \
+            "${VPS_USER}@${VPS_HOST}:${APP_DIR}/"
+          ssh -i ~/.ssh/deploy_key "${VPS_USER}@${VPS_HOST}" "mkdir -p ${APP_DIR}/scripts/ops"
+          rsync -az scripts/ops/ "${VPS_USER}@${VPS_HOST}:${APP_DIR}/scripts/ops/"
+
+      - name: Migrate & restart
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          APP_DIR: ${{ secrets.VPS_APP_DIR }}
+        run: |
+          APP_DIR="${APP_DIR:-/opt/crm}"
+          ssh -i ~/.ssh/deploy_key "${VPS_USER}@${VPS_HOST}" bash -s <<EOF
+          set -euo pipefail
+          cd "$APP_DIR"
+          npm run setup:prod
+          if [ -n "\${DATABASE_URL:-}" ] && [ -f scripts/setup-postgres-rls.pgsql ]; then
+            psql "\$DATABASE_URL" -f scripts/setup-postgres-rls.pgsql || echo "RLS script skipped/warn"
+          fi
+          pm2 delete crm 2>/dev/null || true
+          pm2 start ecosystem.config.cjs
+          pm2 save
+          sleep 3
+          curl -sf "http://127.0.0.1:4200/api/health" | head -c 500
+          EOF
+
+      - name: Smoke test public URL
+        if: ${{ vars.PUBLIC_URL != '' }}
+        run: curl -sf "${{ vars.PUBLIC_URL }}/api/health"

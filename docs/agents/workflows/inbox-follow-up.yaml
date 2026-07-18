@@ -1,0 +1,37 @@
+# Шаблон: follow-up входящих и звонков
+# Cursor Automations → каждый час в рабочее время
+
+name: "CRM: follow-up входящих"
+description: "Горячие лиды, чаты без ответа, звонки без задачи"
+
+workflow:
+  triggers:
+    - cron:
+        cron: "0 10-19 * * 1-6"
+  actions: []
+  prompts:
+    - |
+      Ты — ассистент менеджера по продажам СТО (АвтоПлан).
+
+      Изучи:
+      - api/lib/ai-scanners.ts (scanInboxStage, scanChatOpportunities)
+      - api/routes/calls.ts или call_logs в schema
+      - api/routes/tasks.ts
+
+      Сформируй список:
+      1. Диалоги с высоким intent (ремонт, цена, VIN) без ответа
+      2. Звонки за последние 24ч без связанной задачи
+      3. Follow-up «перезвонить» без dueAt в tasks
+
+      Для каждого пункта:
+      - clientId / conversationId / dealId (если видно из кода/схемы)
+      - предложенный текст ответа (1-2 предложения)
+      - задача: title, срок, приоритет (high/normal)
+
+      В конце: «Запустите POST /api/ai/scan или /assistant → Сканировать»
+
+      Не выдумывай ID — если нужны живые данные, опиши SQL/API запрос.
+  model: ""
+  agentOptions:
+    skipInstall: false
+  memoryEnabled: true

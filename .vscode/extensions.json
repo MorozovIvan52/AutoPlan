@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "ckolkman.vscode-postgres"
+  ],
+  "unwantedRecommendations": [
+    "ms-mssql.mssql",
+    "ms-mssql.sql-database-projects-vscode"
+  ]
+}

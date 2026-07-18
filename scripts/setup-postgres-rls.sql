@@ -1,0 +1,2 @@
+-- Redirect: канонический RLS-скрипт — setup-postgres-rls.pgsql (PostgreSQL-синтаксис).
+-- Запуск: psql "$DATABASE_URL" -f scripts/setup-postgres-rls.pgsql

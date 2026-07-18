@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "node .cursor/hooks/fix-postgres-sql.mjs"
+      }
+    ],
+    "afterFileEdit": [
+      {
+        "command": "node .cursor/hooks/fix-postgres-sql.mjs",
+        "matcher": "Write|StrReplace|EditNotebook"
+      }
+    ]
+  }
+}

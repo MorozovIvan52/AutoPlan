@@ -1,0 +1,29 @@
+---
+description: CRM АвтоПлан — полный справочник для администратора
+alwaysApply: false
+---
+
+# CRM Admin (АвтоПлан)
+
+Полная карта CRM хранится в **`docs/ADMIN-CRM.md`** — читай его при задачах администратора, SaaS, деплоя, настроек, пользователей и эксплуатации.
+
+## Быстрый контекст
+
+- Стек: Hono (`api/`) + React (`src/`), SQLite или PostgreSQL.
+- Роли: `admin` | `operator` | `demo`. Admin-only: `/analytics`, `/payroll`, `/admin/billing`.
+- Tenants: каждая организация изолирована по `tenant_id`.
+- Health: `GET /api/health`. Аудит: `npm run audit:prod`.
+- Не коммитить `.env`, `crm.db`, секреты Avito/Telegram.
+
+## Когда применять
+
+- Настройка нового клиента или tenant
+- Пользователи, каналы, интеграции
+- Деплой, бэкапы, мониторинг
+- Биллинг SaaS, Stripe
+- Диагностика inbox/Avito/preview desync
+
+## Связанные правила
+
+- Анализ операций: `crm-cloud-analyst.mdc`
+- Ошибки IDE/SQL: `fix-ide-errors.mdc`

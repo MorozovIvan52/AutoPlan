@@ -1,0 +1,42 @@
+# Шаблон: утренний брифинг CRM
+# Cursor Automations → New → вставьте поля ниже
+
+name: "CRM: утренний брифинг СТО"
+description: "Анализ входящих, ЗН, склада и просроченных задач каждое утро"
+
+workflow:
+  triggers:
+    - cron:
+        cron: "0 8 * * 1-5"
+  actions: []
+  prompts:
+    - |
+      Ты — CRM Cloud Analyst для АвтоПлан (автосервис + запчасти).
+
+      Обязательно прочитай:
+      - AGENTS.md
+      - .cursor/rules/crm-cloud-analyst.mdc
+
+      Проанализируй репозиторий и составь брифинг на СЕГОДНЯ:
+
+      1. Входящие без ответа — логика в api/lib/ai-scanners.ts и api/lib/chat-sla.ts
+      2. Заказ-наряды (service deals) без обновления > 48 ч
+      3. Записи service_appointments на сегодня
+      4. Склад: нулевые остатки при активных ЗН
+      5. Просроченные задачи — api/routes/tasks.ts
+
+      Формат:
+      ## Срочно (таблица: что | кому | действие)
+      ## Задачи для CRM (title, роль, срок)
+      ## Рекомендация: зайти в /assistant и нажать «Сканировать»
+
+      Пиши по-русски, конкретно, без выдуманных цифр.
+  model: ""
+  agentOptions:
+    skipInstall: false
+  memoryEnabled: true
+
+# В редакторе Automations укажите:
+# - Git repo: этот репозиторий, branch main
+# - Cloud compute: включить
+# - (опционально) Slack → канал #crm-daily

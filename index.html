@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru" translate="no" class="notranslate">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
+    <meta name="theme-color" content="#050a14" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Kvatronet" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/logo.png" type="image/png" sizes="any" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <title>CRM АвтоПлан — СТО и автозапчасти</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Onest:wght@500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      #crm-boot-fallback { display: none; min-height: 100vh; align-items: center; justify-content: center; background: #0c1222; color: #f1f5f9; font-family: sans-serif; padding: 24px; text-align: center; }
+      #crm-boot-fallback a { color: #3b82f6; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <div id="crm-overlays"></div>
+    <div id="crm-boot-fallback" role="alert">
+      <div>
+        <p style="font-size:18px;margin-bottom:12px">CRM не загрузилась</p>
+        <p style="color:#8b9cb8;margin-bottom:16px">Обновите страницу (Ctrl+F5) или откройте /login</p>
+        <a href="/login">Перейти на вход</a>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+    <noscript><p style="color:#fff;text-align:center;padding:40px;font-family:sans-serif">Включите JavaScript для работы CRM</p></noscript>
+    <script>
+      setTimeout(function () {
+        var r = document.getElementById("root");
+        var fb = document.getElementById("crm-boot-fallback");
+        if (r && !r.innerHTML.trim() && fb) {
+          fb.style.display = "flex";
+        }
+      }, 6000);
+    </script>
+  </body>
+</html>

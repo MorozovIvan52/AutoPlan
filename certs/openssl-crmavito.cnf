@@ -1,0 +1,11 @@
+[dn]
+CN = crmavito.online
+
+[req]
+distinguished_name = dn
+prompt = no
+
+[EXT]
+subjectAltName = DNS:crmavito.online, DNS:www.crmavito.online
+keyUsage = digitalSignature
+extendedKeyUsage = serverAuth

@@ -1,0 +1,16 @@
+---
+description: Всегда устранять ошибки IDE и линтера при появлении
+alwaysApply: true
+---
+
+# Устранение ошибок IDE
+
+При появлении ошибок в Problems (линтер, TypeScript, SQL):
+
+1. Исправляй сразу, не оставляй «на потом».
+2. **PostgreSQL / PL/pgSQL** — только `*.pgsql` в `scripts/`. Расширение `.sql` для такого кода даёт ложные ошибки MSSQL-линтера в Cursor/VS Code.
+3. Канонический RLS-скрипт: `scripts/setup-postgres-rls.pgsql`. Файл `scripts/setup-postgres-rls.sql` — только redirect (plaintext), не добавляй туда SQL.
+4. После правок TypeScript: `npx tsc --noEmit`. После правок SQL/IDE: `npm run fix:ide-sql`. Полная настройка workspace (отключить mssql, открыть `.pgsql`): `npm run fix:ide-workspace`.
+5. Не отключай проверки без причины — поправь файл или `.vscode/settings.json` (`files.associations`, `mssql.intelliSense.enableErrorChecking: false`).
+6. Hook `.cursor/hooks/fix-postgres-sql.mjs` при старте сессии и после правок переименовывает случайные `scripts/*.sql` с PostgreSQL-синтаксисом в `.pgsql`.
+7. Если установлено расширение **SQL Server (mssql)** — отключи его для этого workspace или оставь `enableErrorChecking: false` в settings.

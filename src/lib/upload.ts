@@ -1,0 +1,1 @@
+import { parseApiResponse } from "./api-errors";  export async function uploadImageFile(file: File): Promise<string> {   const fd = new FormData();   fd.append("file", file);   const res = await fetch("/api/uploads", { method: "POST", body: fd, credentials: "include" });   const data = await parseApiResponse<{ url: string }>(res);   return data.url; }

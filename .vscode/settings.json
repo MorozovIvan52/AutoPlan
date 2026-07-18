@@ -1,0 +1,27 @@
+{
+  "files.associations": {
+    "**/*.pgsql": "pgsql",
+    "scripts/setup-postgres-rls.sql": "plaintext",
+    "SCHEMA_EXTENSIONS.sql": "plaintext",
+    "docs/ops/POSTGRES-RLS.md": "markdown",
+    "**/scripts/**/*.sql": "plaintext",
+    "**/docs/**/*.sql": "pgsql"
+  },
+  "mssql.intelliSense.enableErrorChecking": false,
+  "mssql.intelliSense.enableIntelliSense": false,
+  "mssql.autoDisableIntelliSense": true,
+  "mssql.connections": [],
+  "sqltools.format": {
+    "language": "postgresql"
+  },
+  "sqltools.useNodeRuntime": true,
+  "[pgsql]": {
+    "editor.defaultFormatter": null
+  },
+  "[sql]": {
+    "editor.defaultFormatter": null
+  },
+  "[plaintext]": {
+    "editor.defaultFormatter": null
+  }
+}
