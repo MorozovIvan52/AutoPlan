@@ -43,6 +43,7 @@ Cloud Agent (расписание)
 
 ## Документация для новичка
 
+- **4 агента разработки (QA, Code Fixer, Docs, Migration):** **[docs/agents/MULTI-AGENT-GUIDE.md](docs/agents/MULTI-AGENT-GUIDE.md)** — промпты в `.cursor/agents/`, вызов через `@crm-agent-qa` и т.д.
 - **Умная техподдержка в CRM** (чат справа внизу, мультиагенты): **[docs/agents/SUPPORT-AGENTS-NOVICE.md](docs/agents/SUPPORT-AGENTS-NOVICE.md)**
 - **Cursor Cloud Agents** (расписание, брифинги): **[docs/agents/CLOUD-AGENTS-SETUP.md](docs/agents/CLOUD-AGENTS-SETUP.md)**
 

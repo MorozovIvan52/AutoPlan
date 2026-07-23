@@ -1,15 +1,46 @@
 import type { IncomingMessage } from "node:http";
 import { getSessionUserId } from "./session";
 
+function normalizeOrigin(raw: string): string {
+  return raw.trim().replace(/\/$/, "").toLowerCase();
+}
+
+/** Разрешённые Origin: PUBLIC_URL, localhost, *.CRM_ROOT_DOMAIN, www. */
 function isAllowedWsOrigin(origin: string | undefined): boolean {
   if (!origin) return true;
-  const allowed = [
+  const o = normalizeOrigin(origin);
+
+  const allowedExact = [
     process.env.PUBLIC_URL,
+    process.env.APP_URL,
     "http://localhost:4200",
     "http://localhost:5173",
     "http://127.0.0.1:4200",
-  ].filter(Boolean) as string[];
-  return allowed.some((a) => origin === a || origin.startsWith(a.replace(/\/$/, "")));
+    "https://localhost:4200",
+  ]
+    .filter(Boolean)
+    .map((a) => normalizeOrigin(String(a)));
+
+  if (allowedExact.some((a) => o === a)) return true;
+
+  const root = (process.env.CRM_ROOT_DOMAIN || "")
+    .trim()
+    .toLowerCase()
+    .replace(/^\.+/, "");
+  if (root) {
+    try {
+      const u = new URL(o);
+      const host = u.hostname.toLowerCase();
+      if (host === root || host === `www.${root}` || host.endsWith(`.${root}`)) {
+        return u.protocol === "https:" || u.protocol === "http:";
+      }
+    } catch {
+      return false;
+    }
+  }
+
+  // Fallback: тот же host, что в запросе (за прокси)
+  return false;
 }
 
 export function sessionIdFromCookieHeader(cookieHeader: string | undefined): string | undefined {

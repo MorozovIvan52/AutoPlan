@@ -29,11 +29,13 @@ import {
 } from "../middleware/security";
 import { ensureDemoAccountAndData, isDemoEnabled } from "../lib/demo-seed";
 import { offerRequiredForUser, tenantOfferAccepted } from "../lib/license-offer";
-import { DEFAULT_TENANT_ID } from "../lib/tenant-bootstrap";
 import { jsonApiError } from "../lib/api-error";
 
 async function userWithOffer(user: typeof schema.users.$inferSelect) {
-  const tenantId = user.tenantId ?? DEFAULT_TENANT_ID;
+  const tenantId = user.tenantId;
+  if (tenantId == null || !Number.isFinite(tenantId) || tenantId <= 0) {
+    throw new Error("Пользователь не привязан к организации");
+  }
   const required = offerRequiredForUser(user);
   const accepted = required ? await tenantOfferAccepted(tenantId) : true;
   return { ...safeUser(user), offerAccepted: accepted, offerRequired: required };

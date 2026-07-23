@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../lib/fetch-api";
 import { useToast } from "../lib/toast";
+import { SearchNotFoundCreate } from "./SearchNotFoundCreate";
 
 type ClientRow = { id: number; name: string; phone?: string | null };
 
@@ -155,9 +156,6 @@ export function ClientSearchSelect({
               {!isFetching && !trimmed && clients.length === 0 && (
                 <p className="client-search__hint">Введите имя или телефон</p>
               )}
-              {!isFetching && trimmed && ready && clients.length === 0 && (
-                <p className="client-search__hint">Клиенты не найдены</p>
-              )}
               {clients.map((client) => (
                 <button
                   key={client.id}
@@ -169,14 +167,25 @@ export function ClientSearchSelect({
                   {client.phone && <span>{client.phone}</span>}
                 </button>
               ))}
-              {allowCreate && trimmed && ready && !isFetching && (
+              {allowCreate && trimmed && ready && !isFetching && clients.length === 0 && (
+                <SearchNotFoundCreate
+                  query={trimmed}
+                  entityLabel="Клиент"
+                  directoryLabel={
+                    createMutation.isPending ? "Создаём…" : "Сохранить в справочник"
+                  }
+                  hint="Клиент сохраняется в базе навсегда и будет доступен во всех документах."
+                  onSaveToDirectory={createClient}
+                />
+              )}
+              {allowCreate && trimmed && ready && !isFetching && clients.length > 0 && (
                 <button
                   type="button"
                   className="client-search__create"
                   disabled={createMutation.isPending}
                   onClick={createClient}
                 >
-                  {createMutation.isPending ? "Создаём клиента…" : `+ Создать клиента «${trimmed}»`}
+                  {createMutation.isPending ? "Создаём клиента…" : `+ Создать ещё «${trimmed}»`}
                 </button>
               )}
             </div>

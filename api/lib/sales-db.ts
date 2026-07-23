@@ -1,6 +1,6 @@
 import { db } from "../database";
 import * as schema from "../database/schema";
-import { and, eq } from "drizzle-orm";
+import { and, eq, gte, sql } from "drizzle-orm";
 import { getCrmSettings } from "./crm-settings";
 import { sqlExec, tableColumns, usePostgres } from "../database/raw-sql";
 import { forTenant, withTenant } from "./tenant-query";
@@ -131,13 +131,16 @@ export async function deductStockForDocument(
       skippedNoStockPartId += 1;
       continue;
     }
-    const [part] = await conn.select().from(schema.partsStock)
-      .where(withTenant(schema.partsStock, eq(schema.partsStock.id, item.stockPartId)));
-    if (!part) continue;
-    const nextQty = Math.max(0, (part.qty || 0) - (item.qty || 1));
-    await conn.update(schema.partsStock).set({ qty: nextQty, updatedAt: new Date() })
-      .where(withTenant(schema.partsStock, eq(schema.partsStock.id, part.id)));
-    deducted += 1;
+    const need = item.qty || 1;
+    // Атомарно: не уходим ниже 0 при гонке (мягкое списание)
+    const updated = await conn.update(schema.partsStock)
+      .set({
+        qty: sql`CASE WHEN ${schema.partsStock.qty} >= ${need} THEN ${schema.partsStock.qty} - ${need} ELSE 0 END`,
+        updatedAt: new Date(),
+      })
+      .where(withTenant(schema.partsStock, eq(schema.partsStock.id, item.stockPartId)))
+      .returning({ id: schema.partsStock.id });
+    if (updated.length) deducted += 1;
   }
   return { deducted, skippedNoStockPartId };
 }
@@ -157,26 +160,43 @@ export async function deductStockForDocumentStrict(
     .where(eq(schema.salesDocumentItems.documentId, documentId));
 
   let skippedNoStockPartId = 0;
+  let deducted = 0;
   for (const item of items) {
     if (!item.stockPartId) {
       skippedNoStockPartId += 1;
       continue;
     }
-    const [part] = await conn.select().from(schema.partsStock)
-      .where(withTenant(schema.partsStock, eq(schema.partsStock.id, item.stockPartId)));
-    if (!part) {
-      throw Object.assign(new Error(`Товар #${item.stockPartId} не найден на складе`), { code: "STOCK_NOT_FOUND", status: 409 });
-    }
     const need = item.qty || 1;
-    if ((part.qty || 0) < need) {
+    const updated = await conn.update(schema.partsStock)
+      .set({
+        qty: sql`${schema.partsStock.qty} - ${need}`,
+        updatedAt: new Date(),
+      })
+      .where(and(
+        withTenant(schema.partsStock, eq(schema.partsStock.id, item.stockPartId)),
+        gte(schema.partsStock.qty, need),
+      ))
+      .returning({
+        id: schema.partsStock.id,
+        name: schema.partsStock.name,
+        qty: schema.partsStock.qty,
+      });
+
+    if (!updated.length) {
+      const [part] = await conn.select().from(schema.partsStock)
+        .where(withTenant(schema.partsStock, eq(schema.partsStock.id, item.stockPartId)));
+      if (!part) {
+        throw Object.assign(new Error(`Товар #${item.stockPartId} не найден на складе`), { code: "STOCK_NOT_FOUND", status: 409 });
+      }
       throw Object.assign(
         new Error(`Недостаточно остатка «${part.name}»: нужно ${need}, есть ${part.qty || 0}`),
         { code: "INSUFFICIENT_STOCK", status: 409 },
       );
     }
+    deducted += 1;
   }
 
-  return deductStockForDocument(documentId, conn);
+  return { deducted, skippedNoStockPartId };
 }
 
 export async function restoreStockForDocument(documentId: number) {
@@ -188,12 +208,12 @@ export async function restoreStockForDocument(documentId: number) {
     .where(eq(schema.salesDocumentItems.documentId, documentId));
   for (const item of items) {
     if (!item.stockPartId) continue;
-    const [part] = await db.select().from(schema.partsStock)
+    const need = item.qty || 1;
+    await db.update(schema.partsStock)
+      .set({
+        qty: sql`${schema.partsStock.qty} + ${need}`,
+        updatedAt: new Date(),
+      })
       .where(withTenant(schema.partsStock, eq(schema.partsStock.id, item.stockPartId)));
-    if (!part) continue;
-    await db.update(schema.partsStock).set({
-      qty: (part.qty || 0) + (item.qty || 1),
-      updatedAt: new Date(),
-    }).where(withTenant(schema.partsStock, eq(schema.partsStock.id, part.id)));
   }
 }

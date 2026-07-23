@@ -8,13 +8,17 @@ import { getZzapSettings, usesZzapExternalLinkMode } from "./zzap";
 
 /**
  * Публичная отдача прайсов для ZZap (внешняя ссылка).
- * Без ZZAP_PUBLIC_TOKEN — открытый доступ (ZZap не передаёт cookie). Рекомендуется задать токен.
- * С токеном — только ?t= или X-ZZap-Token (тот же URL нужно указать в кабинете ZZap).
+ * - /template/:code — основной URL для кабинета; без токена допускается (код шаблона не sequential id).
+ * - /files/:id — только с ZZAP_PUBLIC_TOKEN (иначе перебор id чужих тенантов).
  */
-export function checkZzapPublicAccess(c: Context): boolean {
+export function checkZzapPublicAccess(c: Context, opts?: { requireToken?: boolean }): boolean {
   const token = process.env.ZZAP_PUBLIC_TOKEN?.trim();
-  if (!token) return true;
   const provided = c.req.query("t") || c.req.header("x-zzap-token") || "";
+  if (opts?.requireToken) {
+    if (!token) return false;
+    return provided ? timingSafeEqualText(provided, token) : false;
+  }
+  if (!token) return true;
   return provided ? timingSafeEqualText(provided, token) : false;
 }
 

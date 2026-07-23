@@ -13,5 +13,5 @@
     "resolveJsonModule": true
   },
   "include": ["src", "api", "server.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "api/tmp", "api/tmp-upload", "api/_quarantine", "dist"]
 }

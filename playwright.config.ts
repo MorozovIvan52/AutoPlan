@@ -1,10 +1,11 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const e2eDb = process.env.CRM_DB_PATH || "crm-e2e.db";
+const skipWebServer = process.env.PLAYWRIGHT_SKIP_WEBSERVER === "1";
 
 export default defineConfig({
   testDir: "e2e",
-  globalSetup: "./e2e/global-setup.ts",
+  globalSetup: skipWebServer ? undefined : "./e2e/global-setup.ts",
   timeout: 120_000,
   expect: { timeout: 15_000 },
   retries: process.env.CI ? 1 : 0,
@@ -15,22 +16,27 @@ export default defineConfig({
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
+    extraHTTPHeaders: process.env.PILOT_AUDIT === "1" || process.env.PILOT_TENANT_SLUG
+      ? { "x-tenant-slug": process.env.PILOT_TENANT_SLUG || "sto-1" }
+      : undefined,
   },
-  webServer: {
-    command: "npx tsx scripts/e2e-server.ts",
-    url: "http://127.0.0.1:4200/api/health",
-    reuseExistingServer: !process.env.CI ? false : true,
-    timeout: 180_000,
-    env: {
-      ...process.env,
-      CRM_DB_PATH: e2eDb,
-      CRM_FORCE_SQLITE: "1",
-      NODE_ENV: process.env.NODE_ENV || "test",
-      TELEGRAM_POLLING_IN_APP: "false",
-      AVITO_POLL_INTERVAL_SECONDS: "9999",
-      PORT: process.env.PORT || "4200",
-    },
-  },
+  webServer: skipWebServer
+    ? undefined
+    : {
+        command: "npx tsx scripts/e2e-server.ts",
+        url: "http://127.0.0.1:4200/api/health",
+        reuseExistingServer: !process.env.CI ? false : true,
+        timeout: 180_000,
+        env: {
+          ...process.env,
+          CRM_DB_PATH: e2eDb,
+          CRM_FORCE_SQLITE: "1",
+          NODE_ENV: process.env.NODE_ENV || "test",
+          TELEGRAM_POLLING_IN_APP: "false",
+          AVITO_POLL_INTERVAL_SECONDS: "9999",
+          PORT: process.env.PORT || "4200",
+        },
+      },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
   ],

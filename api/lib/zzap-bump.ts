@@ -317,6 +317,16 @@ export function patchZzapXlsxInPlace(buffer: Buffer, stateKey?: string): Buffer 
       strings.push(fTarget);
     }
 
+    // Убрать мусорные пробелы в F2 от старого bump — иначе ZZap/патч их не видит
+    sheetXml = sheetXml.replace(
+      /<c r="F2" t="inlineStr"><is><t[^>]*>\s*<\/t><\/is><\/c>/g,
+      "",
+    );
+    sheetXml = sheetXml.replace(
+      /<c r="G2"[^/]*(?:\/>|>[\s\S]*?<\/c>)/g,
+      "",
+    );
+
     sheetXml = sheetXml.replace(
       /<c r="D(\d+)"([^>]*?)t="s"([^>]*?)><v>(\d+)<\/v><\/c>/g,
       (m, row, a1, a2, vi) => {
@@ -380,6 +390,19 @@ export function bumpZzapXlsxBuffer(buffer: Buffer): Buffer {
   } catch {
     return buffer;
   }
+}
+
+/**
+ * Реальное изменение контента для ZZap: D/F toggle (наличие/+).
+ * Пробелы в пустых ячейках ZZap отбрасывает → «без изменений».
+ */
+export function putSpaceInEmptyCell(buffer: Buffer, stateKey?: string): Buffer {
+  return patchZzapXlsxInPlace(buffer, stateKey);
+}
+
+/** @deprecated используйте putSpaceInEmptyCell */
+export function forceZzapContentChange(buffer: Buffer, stateKey?: string): Buffer {
+  return putSpaceInEmptyCell(buffer, stateKey);
 }
 
 export function isZzapBumpableFile(fileName?: string | null): boolean {

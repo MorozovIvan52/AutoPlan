@@ -23,5 +23,36 @@
   },
   "[plaintext]": {
     "editor.defaultFormatter": null
-  }
+  },
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/dist/**": true,
+    "**/.git/objects/**": true,
+    "**/*.db": true,
+    "**/*.db-*": true,
+    "**/*.wal": true,
+    "**/*.shm": true,
+    "**/*.traineddata": true,
+    "**/*.mp4": true,
+    "**/test-results/**": true,
+    "**/uploads/**": true,
+    "**/logs/**": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/*.db": true,
+    "**/*.traineddata": true,
+    "**/test-results": true,
+    "**/uploads": true,
+    "**/logs": true
+  },
+  "extensions.ignoreRecommendations": true,
+  "files.exclude": {
+    "**/*.traineddata": true,
+    "**/*.mp4": true,
+    "**/crm-upload.zip": true,
+    "**/test-results": true
+  },
+  "python.languageServer": "None"
 }

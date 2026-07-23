@@ -123,8 +123,21 @@ export async function resolveTenantFromRequest(opts: {
     const hostNormalized = opts.host.split(":")[0]!.toLowerCase();
     const [row] = await db.select().from(schema.tenants).where(eq(schema.tenants.subdomain, hostNormalized));
     if (row) return mapTenant(row);
+
+    // Явный apex-хост (не «тихий» fallback на любой неизвестный host → 1)
+    const rootDomain = (process.env.CRM_ROOT_DOMAIN || "").trim().toLowerCase();
+    if (rootDomain) {
+      const isRoot =
+        hostNormalized === rootDomain || hostNormalized === `www.${rootDomain}`;
+      if (isRoot) {
+        const rootId = Number(process.env.CRM_ROOT_TENANT_ID || DEFAULT_TENANT_ID);
+        if (Number.isFinite(rootId) && rootId > 0) {
+          return getTenantById(rootId);
+        }
+      }
+    }
   }
-  return getTenantById(DEFAULT_TENANT_ID);
+  return null;
 }
 
 function slugify(input: string): string {

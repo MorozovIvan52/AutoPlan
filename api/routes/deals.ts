@@ -17,6 +17,30 @@ import { getClientInTenant, getTagInTenant } from "../lib/tenant-guard";
 import { jsonApiError } from "../lib/api-error";
 import { sendToClientPreferred } from "../lib/client-notify";
 
+/** Поля, которые можно менять через PATCH. tenantId / оплата — только через close-with-payment. */
+const DEAL_PATCH_KEYS = [
+  "clientId", "vehicleId", "title", "orderType", "status",
+  "amount", "partsCost", "laborCost", "discountAmount",
+  "description", "vin", "vehicleMake", "vehicleModel", "vehicleYear", "vehiclePlate", "mileage",
+  "avitoItemId", "avitoItemTitle", "avitoPrice", "avitoOrderId",
+  "deliveryMethod",
+  "cdekOrderUuid", "cdekTrackNumber", "cdekPvzCode", "cdekPvzAddress", "cdekCityCode",
+  "cdekTariffCode", "cdekStatus", "cdekDeliveryCost", "cdekImNumber", "cdekProductName",
+  "cdekPackageWeight", "cdekPackageLength", "cdekPackageWidth", "cdekPackageHeight",
+  "cdekGoodsPayment", "cdekDeliveryRecipient", "cdekErrorMessage",
+  "assignedTo", "vehicleValue", "clientIsPayer", "woGroup", "campaign", "appointmentId",
+  "woNote", "warrantyObligations", "contractTerms", "inspectionReport", "clientApprovalStatus",
+  "defectPhotos", "woEnterpriseId", "companyName",
+] as const;
+
+function pickDealPatch(body: Record<string, unknown>) {
+  const patch: Record<string, unknown> = { updatedAt: new Date() };
+  for (const key of DEAL_PATCH_KEYS) {
+    if (body[key] !== undefined) patch[key] = body[key];
+  }
+  return patch;
+}
+
 export const deals = new Hono()
   .use("*", requireAuth)
   .get("/", async (c) => {
@@ -180,18 +204,19 @@ export const deals = new Hono()
   })
   .patch("/:id", async (c) => {
     const id = parseInt(c.req.param("id"));
-    const body = await c.req.json();
+    const body = await c.req.json() as Record<string, unknown>;
+    const patch = pickDealPatch(body);
 
     const [prev] = await db.select().from(schema.deals)
       .where(withTenant(schema.deals, eq(schema.deals.id, id)));
 
     const [deal] = await db.update(schema.deals)
-      .set({ ...body, updatedAt: new Date() })
+      .set(patch)
       .where(withTenant(schema.deals, eq(schema.deals.id, id)))
       .returning();
 
-    if (deal && body.status && (body.status === "done" || body.status === "cancelled")) {
-      const apptStatus = body.status === "cancelled" ? "cancelled" : "done";
+    if (deal && patch.status && (patch.status === "done" || patch.status === "cancelled")) {
+      const apptStatus = patch.status === "cancelled" ? "cancelled" : "done";
       await db.update(schema.serviceAppointments)
         .set({ status: apptStatus, updatedAt: new Date() })
         .where(eq(schema.serviceAppointments.dealId, id));
@@ -200,7 +225,7 @@ export const deals = new Hono()
     let notify: { ok: boolean; channel?: string; error?: string } | null = null;
     if (
       deal
-      && body.status === "ready"
+      && patch.status === "ready"
       && prev?.status !== "ready"
       && (deal.orderType === "service" || prev?.orderType === "service")
     ) {

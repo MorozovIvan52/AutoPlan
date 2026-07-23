@@ -25,39 +25,62 @@ export async function logStockMovement(
   `, partId, qtyDelta, balance, reason, refType ?? null, refId ?? null, Date.now());
 }
 
+/**
+ * Атомарный резерв: UPDATE с условием по свободному остатку.
+ * Два параллельных запроса не уйдут в минус — второй получит changes=0.
+ */
 export async function reserveStockForDealItem(
   stockPartId: number,
   qty: number,
   dealId: number,
   orderItemId: number,
 ) {
+  if (qty <= 0) throw new Error("Количество резерва должно быть > 0");
   const tid = tenantId();
-  const part = await sqlGet<{ qty: number; reserved_qty: number }>(
-    "SELECT qty, reserved_qty FROM parts_stock WHERE id = ? AND tenant_id = ?",
-    stockPartId,
-    tid,
-  );
-  if (!part) throw new Error("Товар не найден на складе");
-  const available = part.qty - (part.reserved_qty || 0);
-  if (qty > available) {
-    throw new Error(`Недостаточно свободного остатка (доступно ${available})`);
-  }
-  await sqlRun(
-    "UPDATE parts_stock SET reserved_qty = COALESCE(reserved_qty, 0) + ? WHERE id = ? AND tenant_id = ?",
+  const result = await sqlRun(
+    `UPDATE parts_stock
+     SET reserved_qty = COALESCE(reserved_qty, 0) + ?
+     WHERE id = ? AND tenant_id = ?
+       AND (qty - COALESCE(reserved_qty, 0)) >= ?`,
     qty,
     stockPartId,
     tid,
+    qty,
   );
-  await sqlRun("UPDATE order_items SET reserved_qty = ?, stock_part_id = ? WHERE id = ?", qty, stockPartId, orderItemId);
+  if (result.changes === 0) {
+    const part = await sqlGet<{ qty: number; reserved_qty: number }>(
+      "SELECT qty, reserved_qty FROM parts_stock WHERE id = ? AND tenant_id = ?",
+      stockPartId,
+      tid,
+    );
+    if (!part) throw new Error("Товар не найден на складе");
+    const available = part.qty - (part.reserved_qty || 0);
+    throw new Error(`Недостаточно свободного остатка (доступно ${available})`);
+  }
+  await sqlRun(
+    "UPDATE order_items SET reserved_qty = ?, stock_part_id = ? WHERE id = ?",
+    qty,
+    stockPartId,
+    orderItemId,
+  );
   await logStockMovement(stockPartId, 0, `Резерв ${qty} шт. по ЗН #${dealId}`, "deal_reserve", dealId);
 }
 
 export async function releaseReserveForDealItem(stockPartId: number, qty: number, dealId: number) {
   if (!stockPartId || qty <= 0) return;
   const tid = tenantId();
-  await sqlRun(`
-    UPDATE parts_stock SET reserved_qty = MAX(0, COALESCE(reserved_qty, 0) - ?) WHERE id = ? AND tenant_id = ?
-  `, qty, stockPartId, tid);
+  await sqlRun(
+    `UPDATE parts_stock
+     SET reserved_qty = CASE
+       WHEN COALESCE(reserved_qty, 0) <= ? THEN 0
+       ELSE COALESCE(reserved_qty, 0) - ?
+     END
+     WHERE id = ? AND tenant_id = ?`,
+    qty,
+    qty,
+    stockPartId,
+    tid,
+  );
   await logStockMovement(stockPartId, 0, `Снят резерв ${qty} шт. по ЗН #${dealId}`, "deal_reserve_release", dealId);
 }
 

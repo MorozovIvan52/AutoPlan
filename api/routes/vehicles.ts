@@ -14,6 +14,20 @@ import { getClientInTenant } from "../lib/tenant-guard";
 import { getVinPartsHistory, isValidVinParam } from "../lib/vin-parts-history";
 import { jsonApiError } from "../lib/api-error";
 
+/** Поля PATCH: clientId/id/tenant — только через создание или смену клиента отдельно. */
+const VEHICLE_PATCH_KEYS = [
+  "vin", "plate", "make", "model", "year", "mileage", "engine", "notes",
+] as const;
+
+function pickVehiclePatch(body: Record<string, unknown>) {
+  const patch: Record<string, unknown> = {};
+  for (const key of VEHICLE_PATCH_KEYS) {
+    if (body[key] !== undefined) patch[key] = body[key];
+  }
+  if (typeof patch.vin === "string") patch.vin = patch.vin.toUpperCase();
+  return patch;
+}
+
 export const vehicles = new Hono()
   .use("*", requireAuth)
 
@@ -206,13 +220,16 @@ export const vehicles = new Hono()
   })
   .patch("/:id", async (c) => {
     const id = parseInt(c.req.param("id"));
-    const body = await c.req.json();
+    const body = await c.req.json() as Record<string, unknown>;
     const [current] = await db.select().from(schema.vehicles).where(eq(schema.vehicles.id, id));
     if (!current) return c.json({ error: "Автомобиль не найден" }, 404);
     const client = await getClientInTenant(current.clientId);
     if (!client) return c.json({ error: "Автомобиль не найден" }, 404);
-    if (body.vin) body.vin = body.vin.toUpperCase();
-    const [vehicle] = await db.update(schema.vehicles).set(body).where(eq(schema.vehicles.id, id)).returning();
+    const patch = pickVehiclePatch(body);
+    if (Object.keys(patch).length === 0) {
+      return c.json({ vehicle: current }, 200);
+    }
+    const [vehicle] = await db.update(schema.vehicles).set(patch).where(eq(schema.vehicles.id, id)).returning();
     return c.json({ vehicle }, 200);
   })
   .delete("/:id", async (c) => {

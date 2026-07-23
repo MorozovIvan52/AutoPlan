@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "../../lib/fetch-api";
 import { useToast } from "../../lib/toast";
 import { ClientSearchSelect } from "../ClientSearchSelect";
+import { SearchNotFoundCreate } from "../SearchNotFoundCreate";
 import {
   formatMoney,
   lineTotal,
@@ -31,6 +32,7 @@ type Props = {
 
 export function QuickReceiptPos({ onClose, onPosted }: Props) {
   const { toast } = useToast();
+  const qc = useQueryClient();
   const searchRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -40,6 +42,9 @@ export function QuickReceiptPos({ onClose, onPosted }: Props) {
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card" | "transfer">("cash");
   const [warrantyText, setWarrantyText] = useState("");
   const [warrantyId, setWarrantyId] = useState("");
+  const [missName, setMissName] = useState("");
+  const [missPrice, setMissPrice] = useState("0");
+  const [showMissForm, setShowMissForm] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(search.trim()), 180);
@@ -82,16 +87,69 @@ export function QuickReceiptPos({ onClose, onPosted }: Props) {
   });
 
   const hits = (partsData?.parts || []).slice(0, 12);
+  const notFound = debounced.length >= 1 && !isFetching && hits.length === 0;
 
   useEffect(() => {
     setActiveIdx(0);
+    setShowMissForm(false);
+    setMissName(debounced);
   }, [debounced, hits.length]);
 
   const total = lines.reduce((sum, line) => sum + lineTotal(line.qty, line.price), 0);
 
+  const addAdHocLine = (opts: { article: string; name: string; price: number; stockPartId?: number | null }) => {
+    setLines((prev) => [
+      ...prev,
+      {
+        key: `adhoc-${Date.now()}`,
+        stockPartId: opts.stockPartId ?? null,
+        article: opts.article,
+        brand: null,
+        name: opts.name,
+        qty: 1,
+        price: opts.price,
+        maxQty: opts.stockPartId ? null : undefined,
+      },
+    ]);
+    setSearch("");
+    setShowMissForm(false);
+    searchRef.current?.focus();
+  };
+
+  const saveMissToStock = useMutation({
+    mutationFn: () =>
+      apiFetch<{ part: { id: number; article?: string; name: string; price?: number; qty?: number } }>(
+        "/api/parts",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            article: debounced,
+            name: missName.trim() || debounced,
+            price: parseFloat(missPrice.replace(",", ".")) || 0,
+            qty: 0,
+          }),
+        },
+      ),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["pos-parts"] });
+      toast("Товар сохранён на склад — в чек без списания (остаток 0)", "success");
+      // В чек без stockPartId: иначе post спишет со склада, а qty=0 → ошибка.
+      addAdHocLine({
+        article: res.part.article || debounced,
+        name: res.part.name,
+        price: Number(res.part.price) || 0,
+        stockPartId: null,
+      });
+    },
+    onError: (e: Error) => toast(e.message, "error"),
+  });
+
   const addPart = (part: { id: number; article?: string; brand?: string; name: string; qty?: number; price?: number }) => {
     if ((part.qty ?? 0) <= 0) {
-      toast("Нет на складе", "error");
+      toast("Нет на складе — можно добавить в чек без остатка или сохранить номенклатуру", "error");
+      // still allow adding with stock id for reservation/posting rules? Keep strict for stock qty.
+      // For POS: allow ad-hoc from stock card with 0 qty into line without stockPartId path via miss UI.
       return;
     }
     setLines((prev) => {
@@ -226,8 +284,46 @@ export function QuickReceiptPos({ onClose, onPosted }: Props) {
           {debounced.length >= 1 && (
             <div className="pos-receipt-hits">
               {isFetching && <p className="client-search__hint">Поиск…</p>}
-              {!isFetching && hits.length === 0 && (
-                <p className="client-search__hint">На складе нет позиций по запросу</p>
+              {notFound && (
+                <SearchNotFoundCreate
+                  query={debounced}
+                  entityLabel="Товар"
+                  documentLabel="Только в чек"
+                  directoryLabel="Сохранить на склад"
+                  onCreateInDocument={() =>
+                    addAdHocLine({
+                      article: debounced,
+                      name: missName.trim() || debounced,
+                      price: parseFloat(missPrice.replace(",", ".")) || 0,
+                    })
+                  }
+                  onSaveToDirectory={() => setShowMissForm(true)}
+                >
+                  {showMissForm && (
+                    <div className="search-miss__form">
+                      <input
+                        className="crm-input"
+                        placeholder="Наименование *"
+                        value={missName}
+                        onChange={(e) => setMissName(e.target.value)}
+                      />
+                      <input
+                        className="crm-input"
+                        placeholder="Цена ₽"
+                        value={missPrice}
+                        onChange={(e) => setMissPrice(e.target.value)}
+                      />
+                      <button
+                        type="button"
+                        className="crm-btn crm-btn-primary"
+                        disabled={saveMissToStock.isPending}
+                        onClick={() => saveMissToStock.mutate()}
+                      >
+                        На склад и в чек
+                      </button>
+                    </div>
+                  )}
+                </SearchNotFoundCreate>
               )}
               {hits.map((part, idx) => (
                 <button

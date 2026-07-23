@@ -7,14 +7,20 @@ import {
   sendOfferOtp,
   tenantOfferAccepted,
 } from "../lib/license-offer";
-import { DEFAULT_TENANT_ID } from "../lib/tenant-bootstrap";
+
+function resolveUserTenantId(user: { tenantId?: number }, c: { get: (k: "tenantId") => unknown }): number | null {
+  const tid = user.tenantId ?? (c.get("tenantId") as number | undefined);
+  if (tid == null || !Number.isFinite(tid) || tid <= 0) return null;
+  return tid;
+}
 
 export const licenseOffer = new Hono()
   .use("*", requireAuth)
 
   .get("/status", async (c) => {
     const user = c.get("user") as { id: number; role?: string; tenantId?: number };
-    const tenantId = user.tenantId ?? (c.get("tenantId") as number) ?? DEFAULT_TENANT_ID;
+    const tenantId = resolveUserTenantId(user, c);
+    if (tenantId == null) return c.json({ error: "Пользователь не привязан к организации" }, 403);
     const required = offerRequiredForUser(user);
     const accepted = required ? await tenantOfferAccepted(tenantId) : true;
     const readiness = getLicensorReadiness();
@@ -46,7 +52,8 @@ export const licenseOffer = new Hono()
     if (!offerRequiredForUser(user)) {
       return c.json({ error: "Для демо-аккаунта акцепт не требуется" }, 400);
     }
-    const tenantId = user.tenantId ?? (c.get("tenantId") as number) ?? DEFAULT_TENANT_ID;
+    const tenantId = resolveUserTenantId(user, c);
+    if (tenantId == null) return c.json({ error: "Пользователь не привязан к организации" }, 403);
     if (await tenantOfferAccepted(tenantId)) {
       return c.json({ ok: true, alreadyAccepted: true }, 200);
     }
@@ -69,7 +76,8 @@ export const licenseOffer = new Hono()
     if (!offerRequiredForUser(user)) {
       return c.json({ ok: true, skipped: true }, 200);
     }
-    const tenantId = user.tenantId ?? (c.get("tenantId") as number) ?? DEFAULT_TENANT_ID;
+    const tenantId = resolveUserTenantId(user, c);
+    if (tenantId == null) return c.json({ error: "Пользователь не привязан к организации" }, 403);
     if (await tenantOfferAccepted(tenantId)) {
       return c.json({ ok: true, alreadyAccepted: true }, 200);
     }

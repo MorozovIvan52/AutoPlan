@@ -9,6 +9,7 @@ crm-e2e-billing.db
 crm-e2e-billing.db-wal
 crm-e2e-billing.db-shm
 dist/
+api/tmp/
 crm.db
 crm.db-wal
 crm.db-shm
@@ -19,6 +20,10 @@ crm.db-shm
 .env.*
 !.env.example
 !.env.s3.example
+_bad_utf8.json
+_css_bad.json
+_utf8_check.txt
+_restore_from_client/
 uploads/
 cookies.txt
 crm-upload.zip

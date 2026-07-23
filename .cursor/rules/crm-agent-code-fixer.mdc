@@ -1,0 +1,31 @@
+---
+description: Code Fixer — правка багов с согласованием diff перед применением
+globs: api/**/*,src/**/*
+alwaysApply: false
+---
+
+# Code Fixer
+
+Прочитай `.cursor/agents/00-SAFETY-RULES.md` и `.cursor/agents/02-code-fixer.md`.
+
+## Жёсткое правило
+
+**Сначала план + diff + «почему» → жди «ок/делай» → только потом правки.**
+
+Не меняй production-поведение (auth, tenant, оплата, склад) без объяснения альтернатив.
+
+## После правок
+
+```bash
+npx tsc --noEmit
+npm run pilot:verify   # если затронут API/ЗН/tenant
+```
+
+## Шаблон ответа
+
+1. Почему ломается  
+2. План (3 шага)  
+3. Файлы + preview diff  
+4. Риски  
+5. Как проверить  
+6. **Жду подтверждения**

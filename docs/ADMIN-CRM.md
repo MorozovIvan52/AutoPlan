@@ -27,32 +27,32 @@
 |--------|-----|----------|------|
 | Входящие | `/` | `src/pages/inbox.tsx` | все |
 | Дашборд | `/dashboard` | `src/pages/dashboard.tsx` | все |
-| AI-боты | `/assistant` | `src/pages/assistant.tsx` | все (demo скрыт) |
+| AI-боты | `/assistant` | `src/pages/assistant.tsx` | все |
 | Команда (чат) | `/team` | `src/pages/team-chat.tsx` | все |
 | Клиенты | `/clients` | `src/pages/clients.tsx` | все |
 | Заказы | `/deals` | `src/pages/deals.tsx` | все |
-| Заказ-наряды | `/zn`, `/zn/:id` | `src/pages/zn.tsx`, `zn-edit.tsx` | все |
+| Заказ-наряды | `/zn`, `/zn/:id` | `src/pages/zn.tsx` | все |
 | Реализация | `/sales` | `src/pages/sales.tsx` | все |
 | Доставка (СДЭК) | `/delivery` | `src/pages/delivery.tsx` | все |
+| Деньги | `/money`, `/money/:section` | `src/pages/money.tsx` | все (UI scaffold; flyout в `nav.ts`) |
 | Склад | `/warehouse` | `src/pages/warehouse.tsx` | все |
-| Проценка | `/procurement` | `src/pages/procurement.tsx` | все |
 | Выкуп | `/buyouts` | `src/pages/buyouts.tsx` | все |
 | ZZap | `/zzap` | `src/pages/zzap.tsx` | все |
 | Календарь | `/calendar` | `src/pages/calendar.tsx` | все |
-| Ганта (цех) | `/gantt` | `src/pages/gantt.tsx` | все |
 | Запись на ремонт | `/repairs`, `/service` | `src/pages/repairs.tsx` | все |
 | Задачи | `/tasks` | `src/pages/tasks.tsx` | все |
 | Звонки | `/calls` | `src/pages/calls.tsx` | все |
 | Рассылки | `/marketing` | `src/pages/marketing.tsx` | все |
 | Отчёты | `/analytics` | `src/pages/analytics.tsx` | **admin** |
-| Активность | `/team-activity` | `src/pages/team-activity.tsx` | **admin** |
 | Расчёт ЗП | `/payroll` | `src/pages/payroll.tsx` | **admin** |
-| Биллинг SaaS | `/admin/billing` | `src/pages/admin/BillingPage.tsx` | **admin** |
 | Настройки | `/settings` | `src/pages/settings.tsx` | все |
 | Зарплата (сотрудник) | `/my-salary` | `src/pages/my-salary.tsx` | все |
-| Публичная запись | `/book` | `src/pages/book.tsx` | без входа |
 
-Маршруты: `src/app.tsx`. Меню: `src/components/Sidebar.tsx`.
+**API only / UI нет в текущем билде:** `/procurement`, `/gantt`, `/team-activity`, `/admin/billing`, `/book` (публичная запись — API `/api/public`).
+
+**Настройки — вкладки:** themes, security, alerts, tags, templates, users, channels, general, telephony, cdek, ai, sales.
+
+Маршруты: `src/app.tsx`. Меню: `src/lib/nav.ts` → `src/components/Sidebar.tsx`.
 
 ---
 
@@ -60,11 +60,11 @@
 
 | Роль | `users.role` | Доступ |
 |------|--------------|--------|
-| **admin** | `admin` | Всё + отчёты, ЗП, биллинг, пользователи, интеграции |
+| **admin** | `admin` | Всё + отчёты, ЗП, пользователи, интеграции |
 | **operator** | `operator` | Чаты, клиенты, заказы, ЗН, склад |
 | **demo** | `demo` | Только просмотр; часть разделов скрыта |
 
-Проверка admin-маршрутов: `AdminRoute` в `src/app.tsx`, `requireAdmin` в `api/middleware/auth.ts`.
+Admin-пункты меню скрываются через `adminOnly` в `src/lib/nav.ts` / `Sidebar`. API: `requireAdmin` в `api/middleware/auth.ts`. Отдельного `AdminRoute` в `app.tsx` нет — общий `ProtectedRoute`.
 
 ---
 
@@ -78,6 +78,7 @@
 | Клиенты | `/clients` | `api/routes/clients.ts` |
 | Диалоги | `/conversations` | `api/routes/conversations.ts` |
 | Заказы/ЗН | `/deals` | `api/routes/deals.ts` |
+| ЗН labor/items | `/orders` | `api/routes/orders.ts` |
 | СТО расшир. | `/sto`, `/sto/inventory` | `api/routes/sto-extended.ts`, `sto-inventory.ts` |
 | Склад/запчасти | `/parts` | `api/routes/parts.ts` |
 | Реализация | `/sales` | `api/routes/sales.ts` |

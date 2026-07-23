@@ -7,7 +7,6 @@ import {
 } from "../lib/tenant";
 import { setTenantContext, runWithTenant } from "../lib/tenant-context";
 import { getAuthUser } from "../lib/session";
-import { DEFAULT_TENANT_ID } from "../lib/tenant-bootstrap";
 
 declare module "hono" {
   interface ContextVariableMap {
@@ -44,8 +43,12 @@ export const enforceTenantUser = createMiddleware(async (c, next) => {
     return c.json({ error: "Доступ к этой организации запрещён" }, 403);
   }
   if (user && !tenant) {
-    setTenantContext({ tenantId: user.tenantId ?? DEFAULT_TENANT_ID });
-    c.set("tenantId", user.tenantId ?? DEFAULT_TENANT_ID);
+    const tid = user.tenantId;
+    if (tid == null || !Number.isFinite(tid) || tid <= 0) {
+      return c.json({ error: "Пользователь не привязан к организации" }, 403);
+    }
+    setTenantContext({ tenantId: tid });
+    c.set("tenantId", tid);
   }
   await next();
 });

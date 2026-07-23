@@ -392,7 +392,15 @@ export function SalesDocumentModal({ documentId, onClose, onChanged }: Props) {
                         setNewName(part.name);
                         setNewPrice(part.price != null ? String(part.price) : "");
                       }}
-                      placeholder="Артикул"
+                      onCreateInDocument={(item) => {
+                        setNewStockPartId(null);
+                        setNewArticle(item.article);
+                        setNewBrand(item.brand || "");
+                        setNewName(item.name);
+                        setNewPrice(String(item.price || 0));
+                      }}
+                      placeholder="Артикул / поиск"
+                      allowCreate
                     />
                     <input className="crm-input" placeholder="Бренд" value={newBrand} onChange={(e) => setNewBrand(e.target.value)} />
                     <input className="crm-input" placeholder="Название *" value={newName} onChange={(e) => setNewName(e.target.value)} style={{ gridColumn: "span 2" }} />

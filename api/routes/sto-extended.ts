@@ -81,6 +81,25 @@ export const stoExtended = new Hono()
     return c.json({ items }, 200);
   })
 
+  .get("/labor-catalog/categories", async (c) => {
+    const { STO_LABOR_UI_GROUPS, mapLaborCategoryToGroup } = await import("../lib/sto-labor-groups");
+    const tid = getTenantId();
+    const rows = await sqlAll<{ category: string | null; n: number }>(`
+      SELECT category, COUNT(*) AS n FROM sto_labor_catalog
+      WHERE tenant_id = ? AND is_active = 1
+      GROUP BY category
+    `, tid);
+    const counts: Record<string, number> = {};
+    for (const g of STO_LABOR_UI_GROUPS) counts[g] = 0;
+    for (const row of rows) {
+      const g = mapLaborCategoryToGroup(row.category);
+      counts[g] = (counts[g] || 0) + Number(row.n);
+    }
+    return c.json({
+      groups: STO_LABOR_UI_GROUPS.map((name) => ({ name, count: counts[name] || 0 })),
+    }, 200);
+  })
+
   .post("/labor-catalog", async (c) => {
     const body = await c.req.json();
     const code = (body.code || "").trim();
@@ -159,9 +178,23 @@ export const stoExtended = new Hono()
 
   .post("/labor-catalog/reseed", async (c) => {
     const { ensureStoExtendedTables } = await import("../lib/sto-extended-bootstrap");
+    const { mapLaborCategoryToGroup } = await import("../lib/sto-labor-groups");
     await ensureStoExtendedTables();
+    const tid = getTenantId();
+    const rows = await sqlAll<{ id: number; category: string | null }>(
+      "SELECT id, category FROM sto_labor_catalog WHERE tenant_id = ?",
+      tid,
+    );
+    let remapped = 0;
+    for (const row of rows) {
+      const next = mapLaborCategoryToGroup(row.category);
+      if (next !== (row.category || "")) {
+        await sqlRun("UPDATE sto_labor_catalog SET category = ? WHERE id = ? AND tenant_id = ?", next, row.id, tid);
+        remapped++;
+      }
+    }
     const items = await searchLaborCatalogFromDb("");
-    return c.json({ ok: true, count: items.length }, 200);
+    return c.json({ ok: true, count: items.length, remapped }, 200);
   })
 
   // ── Комплексы работ ─────────────────────────────────────────────────────────

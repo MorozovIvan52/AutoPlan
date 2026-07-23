@@ -218,7 +218,7 @@ export const cdek = new Hono()
     if (weightG < 100) return c.json({ error: "Вес должен быть не менее 100 г" }, 400);
     if (!lengthCm || !widthCm || !heightCm) return c.json({ error: "Укажите габариты (длина, ширина, высота) в см" }, 400);
 
-    const imNumber = deal.title.trim();
+    const imNumber = String(body.imNumber || deal.title || "").trim();
     if (!imNumber) return c.json({ error: "У заказа нет номера — укажите название заказа в CRM" }, 400);
 
     if (body.replaceOldOrder) {

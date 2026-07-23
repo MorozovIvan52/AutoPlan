@@ -10,7 +10,7 @@ alwaysApply: true
 1. Исправляй сразу, не оставляй «на потом».
 2. **PostgreSQL / PL/pgSQL** — только `*.pgsql` в `scripts/`. Расширение `.sql` для такого кода даёт ложные ошибки MSSQL-линтера в Cursor/VS Code.
 3. Канонический RLS-скрипт: `scripts/setup-postgres-rls.pgsql`. Файл `scripts/setup-postgres-rls.sql` — только redirect (plaintext), не добавляй туда SQL.
-4. После правок TypeScript: `npx tsc --noEmit`. После правок SQL/IDE: `npm run fix:ide-sql`. Полная настройка workspace (отключить mssql, открыть `.pgsql`): `npm run fix:ide-workspace`.
+4. После правок TypeScript: `npx tsc --noEmit`. После правок SQL: `npm run fix:ide-sql` (не через Cursor hooks).
 5. Не отключай проверки без причины — поправь файл или `.vscode/settings.json` (`files.associations`, `mssql.intelliSense.enableErrorChecking: false`).
-6. Hook `.cursor/hooks/fix-postgres-sql.mjs` при старте сессии и после правок переименовывает случайные `scripts/*.sql` с PostgreSQL-синтаксисом в `.pgsql`.
-7. Если установлено расширение **SQL Server (mssql)** — отключи его для этого workspace или оставь `enableErrorChecking: false` в settings.
+6. **Запрет:** не добавляй `sessionStart` / тяжёлые `afterFileEdit` hooks в `.cursor/hooks.json`. Они дают «Agent Execution Timed Out» и роняют extension host — агент «чинит себя и умирает». SQL-fix только через `npm run fix:ide-sql`.
+7. Если установлено расширение **SQL Server (mssql)** — отключи его для этого workspace или оставь `enableErrorChecking: false` в settings. `npm run fix:ide-workspace` — только вручную вне активного агента (может перезагрузить окно).

@@ -67,7 +67,8 @@ export const zzap = new Hono()
   })
 
   .get("/files/:id/:filename", async (c) => {
-    if (!checkZzapPublicAccess(c)) return c.text("Forbidden", 403);
+    // Sequential id — без токена нельзя (утечка прайсов чужих тенантов)
+    if (!checkZzapPublicAccess(c, { requireToken: true })) return c.text("Forbidden", 403);
     const id = parseInt(c.req.param("id"));
     const [list] = await db.select().from(schema.zzapPriceLists).where(eq(schema.zzapPriceLists.id, id));
     if (!list) return c.text("Not found", 404);

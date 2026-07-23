@@ -151,8 +151,12 @@ export const orders = new Hono()
     if (!name) return c.json({ error: "Укажите название работы" }, 400);
 
     const hours = body.hours != null ? Number(body.hours) : normHours;
-    const hourlyRate = body.hourlyRate != null ? Number(body.hourlyRate) : defaultRate;
-    const price = calcLaborLinePrice({ normHours, hours, hourlyRate }, defaultRate);
+    let hourlyRate = body.hourlyRate != null ? Number(body.hourlyRate) : defaultRate;
+    let price = calcLaborLinePrice({ normHours, hours, hourlyRate }, defaultRate);
+    if (body.price != null && !Number.isNaN(Number(body.price))) {
+      price = Math.round(Number(body.price) * 100) / 100;
+      if (hours > 0) hourlyRate = Math.round((price / hours) * 100) / 100;
+    }
 
     let executorUserId = body.executorUserId != null ? Number(body.executorUserId) : null;
     let executorName = body.executorName || null;

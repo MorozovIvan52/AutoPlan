@@ -148,6 +148,14 @@
 
 .sales-doc-grid .article-ac{min-width:0}
 
+.search-miss{padding:10px 12px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
+.search-miss__title{margin:0;font-size:13px;font-weight:600;color:var(--text)}
+.search-miss__hint{margin:0;font-size:12px;color:var(--text-muted);line-height:1.4}
+.search-miss__actions{display:flex;flex-wrap:wrap;gap:8px}
+.search-miss__form{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));margin-top:4px}
+.search-miss__form .crm-btn{align-self:end}
+.zn-suggest .search-miss,.zn-catalog__main .search-miss{border-top:none;background:var(--accent-soft);border-radius:8px;margin:4px 0}
+
 .sales-page-header{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap;padding:16px 20px;border-bottom:1px solid var(--border);background:var(--panel);flex-shrink:0}
 
 .sales-page-header__main{min-width:0;flex:1 1 280px}

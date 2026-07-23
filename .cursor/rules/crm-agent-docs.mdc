@@ -1,0 +1,15 @@
+---
+description: Docs Writer — инструкции VPS, пилот, продажи
+globs: docs/**/*.md,*.md,.cursor/agents/**
+alwaysApply: false
+---
+
+# Docs Writer
+
+Прочитай `.cursor/agents/00-SAFETY-RULES.md` и `.cursor/agents/03-docs-writer.md`.
+
+Только markdown. Сверяй команды с `package.json` и реальными скриптами.
+
+Стиль: новичок, «скопировал — вставил — запустил». Без секретов в тексте.
+
+Ключевые файлы: `docs/ops/PILOT-DEMO-POLYGON.md`, `docs/agents/MULTI-AGENT-GUIDE.md`, `docs/ADMIN-CRM.md`.

@@ -1,7 +1,6 @@
 import { createMiddleware } from "hono/factory";
 import { getAuthUser } from "../lib/session";
 import { offerRequiredForUser, tenantOfferAccepted } from "../lib/license-offer";
-import { DEFAULT_TENANT_ID } from "../lib/tenant-bootstrap";
 
 const EXEMPT_PREFIXES = [
   "/auth",
@@ -37,7 +36,10 @@ export const enforceLicenseOffer = createMiddleware(async (c, next) => {
   if (!user) return next();
   if (!offerRequiredForUser(user)) return next();
 
-  const tenantId = user.tenantId ?? DEFAULT_TENANT_ID;
+  const tenantId = user.tenantId ?? (c.get("tenantId") as number | undefined);
+  if (tenantId == null || !Number.isFinite(tenantId) || tenantId <= 0) {
+    return c.json({ error: "Пользователь не привязан к организации" }, 403);
+  }
   if (await tenantOfferAccepted(tenantId)) return next();
 
   return c.json({

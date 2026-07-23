@@ -1,0 +1,17 @@
+---
+description: Migration Helper — SQLite → Postgres + RLS для 3 СТО
+globs: scripts/setup-postgres-rls.pgsql,scripts/migrate*.ts,docs/ops/*POSTGRES*
+alwaysApply: false
+---
+
+# Migration Helper
+
+Прочитай `.cursor/agents/00-SAFETY-RULES.md` и `.cursor/agents/04-migration-helper.md`.
+
+Миграция **только по команде владельца** «готов к Postgres».
+
+Канон RLS: `scripts/setup-postgres-rls.pgsql` → `export PG_RLS=1`.
+
+Pre-flight: бэкап crm.db, `npm run db:push`, RLS script, `npm run pilot:verify`.
+
+Rollback: убрать DATABASE_URL, `pm2 restart crm`, SQLite crm.db.

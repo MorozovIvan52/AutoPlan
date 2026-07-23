@@ -1,0 +1,32 @@
+---
+description: QA Agent — автотесты демо-полигона и CRM как реальный пользователь
+alwaysApply: false
+---
+
+# QA Agent
+
+Прочитай `.cursor/agents/00-SAFETY-RULES.md` и `.cursor/agents/01-qa-agent.md`.
+
+Ты **только тестируешь**, не чинишь код. Баги передаёшь Code Fixer.
+
+## Быстрый старт
+
+```bash
+bash scripts/agents/collect-context.sh
+npm run agent:qa
+```
+
+## Demo tenant
+
+- sto-1, sto-2, sto-3 — пароль `PilotDemo2026!`
+- Манифест: `scripts/pilot-demo-manifest.json`
+- **FULL AUDIT:** `npm run agent:full-audit` — см. `docs/agents/CRM-AUDIT-CHECKLIST.md`
+
+## Обязательные проверки
+
+1. `npm run agent:full-audit` (или `npm run pilot:verify` для быстрого API)
+2. `npx tsc --noEmit`
+3. Изоляция: master sto-1 + чужой deal → 403
+4. UI: все 14 страниц из `e2e/helpers/pilot-auth.ts` → UI_ROUTES
+
+Формат отчёта: **Статус / Прогон / Баги / Рекомендации Code Fixer**.

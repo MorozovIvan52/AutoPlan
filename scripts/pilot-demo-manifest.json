@@ -1,0 +1,98 @@
+{
+  "password": "PilotDemo2026!",
+  "tenants": [
+    {
+      "slug": "sto-1",
+      "id": 8,
+      "subdomain": "sto1",
+      "users": [
+        {
+          "role": "master",
+          "email": "master@sto1.demo",
+          "id": 22
+        },
+        {
+          "role": "admin",
+          "email": "admin@sto1.demo",
+          "id": 23
+        },
+        {
+          "role": "accountant",
+          "email": "accountant@sto1.demo",
+          "id": 24
+        }
+      ],
+      "clientId": 3421,
+      "conversationId": 3648,
+      "deals": {
+        "closedId": 342,
+        "draftId": 343
+      },
+      "racePartId": 39,
+      "racePartArticle": "PILOT-1-RACE",
+      "receiptDocId": 6
+    },
+    {
+      "slug": "sto-2",
+      "id": 9,
+      "subdomain": "sto2",
+      "users": [
+        {
+          "role": "master",
+          "email": "master@sto2.demo",
+          "id": 25
+        },
+        {
+          "role": "admin",
+          "email": "admin@sto2.demo",
+          "id": 26
+        },
+        {
+          "role": "accountant",
+          "email": "accountant@sto2.demo",
+          "id": 27
+        }
+      ],
+      "clientId": 3422,
+      "conversationId": 3649,
+      "deals": {
+        "closedId": 344,
+        "draftId": 345
+      },
+      "racePartId": 44,
+      "racePartArticle": "PILOT-2-RACE",
+      "receiptDocId": 7
+    },
+    {
+      "slug": "sto-3",
+      "id": 10,
+      "subdomain": "sto3",
+      "users": [
+        {
+          "role": "master",
+          "email": "master@sto3.demo",
+          "id": 28
+        },
+        {
+          "role": "admin",
+          "email": "admin@sto3.demo",
+          "id": 29
+        },
+        {
+          "role": "accountant",
+          "email": "accountant@sto3.demo",
+          "id": 30
+        }
+      ],
+      "clientId": 3423,
+      "conversationId": 3650,
+      "deals": {
+        "closedId": 346,
+        "draftId": 347
+      },
+      "racePartId": 49,
+      "racePartArticle": "PILOT-3-RACE",
+      "receiptDocId": 8
+    }
+  ]
+}

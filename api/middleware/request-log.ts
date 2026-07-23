@@ -4,7 +4,7 @@
 import { createMiddleware } from "hono/factory";
 import { randomUUID } from "node:crypto";
 import { log } from "../lib/logger";
-import { getTenantId } from "../lib/tenant-context";
+import { getTenantIdOrNull } from "../lib/tenant-context";
 
 export type RequestLogVariables = {
   requestId: string;
@@ -22,7 +22,7 @@ export const requestLog = createMiddleware(async (c, next) => {
   try {
     await next();
   } finally {
-    const tenantId = getTenantId();
+    const tenantId = getTenantIdOrNull();
     const uid = c.get("userId") as number | undefined;
     if (typeof uid === "number") userId = uid;
 
